@@ -1,6 +1,25 @@
 import fragment from './canvas.frag.js'
 import vertex from './canvas.vert.js'
 
+let assetLoaded = {
+    percentage: 0,
+    num: 0,
+    size: 0,
+    totNum: 4,
+};
+
+const loading = document.querySelector('#loading');
+const assetLoadingInterval = setInterval(()=>{
+    if (assetLoaded.percentage < Math.floor(assetLoaded.num/assetLoaded.totNum*100)) {
+        ++assetLoaded.percentage;
+        loading.textContent = 'Loading... ' + assetLoaded.percentage + '%';
+    }else if (assetLoaded.percentage === 100) {
+        document.getElementById('preloader').style.opacity = 0;
+        clearInterval(assetLoadingInterval);
+    }
+}, 15);
+
+
 class App {
     constructor() {
         // Get A WebGL context
@@ -23,7 +42,8 @@ class App {
         // setup GLSL program
         gl.useProgram(program);
 
-        this.loadImages(['../img/Spring.jpg', '../img/Summer.jpg', '../img/Autumn.jpg', '../img/Winter.jpg'], function () {
+        this.loadImages(['../img/Spring_left.jpg', '../img/Summer_left.jpg', '../img/Autumn_left.jpg', '../img/Winter_left.jpg'], function () {
+        // this.loadImages(['../img/Spring_left.jpg', '../img/Spring_right.jpg', '../img/Summer_left.jpg', '../img/Summer_right.jpg', '../img/Autumn_left.jpg', '../img/Autumn_right.jpg', '../img/Winter_left.jpg', '../img/Winter_right.jpg'], function () {
             // look up where the vertex data needs to go.
             const positionLocation = gl.getAttribLocation(program, "a_position");
             const texcoordLocation = gl.getAttribLocation(program, "a_uv");
@@ -125,11 +145,30 @@ class App {
 
         // set the event listener
         window.addEventListener('resize', this.resize.bind(this));
+
         canvas.addEventListener('mousemove', function (evt) {
             gl.uniform2f(this.u_mousePosition, this.dpr * evt.clientX, this.dpr * evt.clientY);
         }.bind(this));
+
+        this.touch_move = {x: 0, y: 0};
         canvas.addEventListener('touchmove', function (evt) {
-            gl.uniform2f(this.u_mousePosition, this.dpr * evt.changedTouches[0].clientX, this.dpr * evt.changedTouches[0].clientY);
+            if (this.touch_moving) {
+                const ratio = 1;//this.canvas.width / this.images[0].width;
+
+                this.touch_move.x -= ratio * this.dpr * (evt.changedTouches[0].clientX - this.touch_curr.clientX);
+                this.touch_move.y -= this.dpr * (evt.changedTouches[0].clientY - this.touch_curr.clientY);
+                this.touch_move.x = Math.min(Math.max(this.touch_move.x, 1), canvas.width-1);
+                this.touch_move.y = Math.min(Math.max(this.touch_move.y, 1), canvas.height-1);
+
+                gl.uniform2f(this.u_mousePosition, this.touch_move.x, this.touch_move.y);
+            }
+            this.touch_curr = evt.changedTouches[0];
+            this.touch_moving = true;
+            evt.preventDefault();
+        }.bind(this));
+        canvas.addEventListener('touchend', function (evt) {
+            this.touch_moving = false;
+            evt.preventDefault();
         }.bind(this));
         
         window.requestAnimationFrame(this.render.bind(this));
@@ -179,6 +218,8 @@ class App {
         // Called each time an image finished loading.
         const onImageLoad = function () {
             --numImagesToLoad;
+            ++assetLoaded.num;
+
             // If all the images are loaded call the callback.
             if (numImagesToLoad === 0) {
                 callback();
@@ -228,7 +269,6 @@ class App {
 
 window.onload = () => {
     new App();
-    document.getElementById('preloader').style.opacity = 0;
     window.document.oncontextmenu = () => { return false }; // lock right click
 
     if (getComputedStyle(document.documentElement).getPropertyValue('--debug-mode') != 1) {
