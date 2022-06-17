@@ -177,12 +177,19 @@ class App {
             this.touch_move.y = this.dpr * evt.clientY / this.canvas.height;
             gl.uniform2f(this.u_mousePosition, this.touch_move.x, this.touch_move.y);
         }.bind(this));
+        canvas.addEventListener('touchstart', function (evt) {
+            this.touch_vel = 0;
+            clearInterval(this.touch_damping);
+            this.touch_damping = null;
+        });
         canvas.addEventListener('touchmove', function (evt) {
             if (this.touch_moving) {
                 const img_ratio = this.canvas.height / this.param.image.height;
                 const ratio = this.canvas.width / (this.param.image.width*img_ratio - this.canvas.width);
 
-                this.touch_move.x -= ratio * this.dpr * (evt.changedTouches[0].clientX - this.touch_curr.clientX) / this.canvas.width;
+                this.touch_vel = ratio * this.dpr * (evt.changedTouches[0].clientX - this.touch_curr.clientX) / this.canvas.width;
+                
+                this.touch_move.x -= this.touch_vel;
                 this.touch_move.y -= this.dpr * (evt.changedTouches[0].clientY - this.touch_curr.clientY) / this.canvas.height;
                 this.touch_move.x = Math.min(Math.max(this.touch_move.x, 0), 1);
                 this.touch_move.y = Math.min(Math.max(this.touch_move.y, 0), 1);
@@ -195,6 +202,30 @@ class App {
         }.bind(this));
         canvas.addEventListener('touchend', function (evt) {
             this.touch_moving = false;
+
+            if (this.touch_damping == null) {
+                this.touch_damping = setInterval(function(){
+                    let sign = Math.sign(this.touch_vel);
+                    if (sign > 0)
+                        this.touch_vel -= 0.5 /this.canvas.width;
+                    else
+                        this.touch_vel += 0.5 /this.canvas.width;
+
+                    if (sign * Math.sign(this.touch_vel) < 0) {
+                        clearInterval(this.touch_damping);
+                        this.touch_damping = null;
+                    }else {
+                        this.touch_move.x -= this.touch_vel;
+                        if (this.touch_move.x >= 1 || this.touch_move.x <= 0) {
+                            this.touch_move.x = Math.min(Math.max(this.touch_move.x, 0), 1);
+                            clearInterval(this.touch_damping);
+                            this.touch_damping = null;
+                        }
+                        gl.uniform2f(this.u_mousePosition, this.touch_move.x, this.touch_move.y);
+                    }
+                }.bind(this), 15);
+            }
+
             evt.preventDefault();
         }.bind(this));
         

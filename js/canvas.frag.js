@@ -26,6 +26,8 @@ void main() {
     float weight = u_mousePosition.y * 4.;
     float transl = u_mousePosition.x;
 
+    transl = clamp(transl, 0., 1.);
+
     vec4 color0, color1;
     if (weight >= 3.0) {
         color0 = texture2D(u_image3L, v_uv * vec2(uvRatio/xyRatio, 1.0) + vec2((1.0-uvRatio/xyRatio)*transl, 0.));
@@ -43,7 +45,10 @@ void main() {
         if (weight < 0.0) weight = 0.0;
     }
     
-    gl_FragColor = mix(color0, color1, fract(weight));
+    if (weight == 4.0)
+        gl_FragColor = mix(color0, color1, 1.0);
+    else
+        gl_FragColor = mix(color0, color1, fract(weight));
 }
 `
 export default fragment
