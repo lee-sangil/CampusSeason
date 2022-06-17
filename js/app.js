@@ -5,7 +5,7 @@ let assetLoaded = {
     percentage: 0,
     num: 0,
     size: 0,
-    totNum: 4,
+    totNum: 8,
 };
 
 const loading = document.querySelector('#loading');
@@ -18,7 +18,6 @@ const assetLoadingInterval = setInterval(()=>{
         clearInterval(assetLoadingInterval);
     }
 }, 15);
-
 
 class App {
     constructor() {
@@ -42,8 +41,22 @@ class App {
         // setup GLSL program
         gl.useProgram(program);
 
-        this.loadImages(['../img/Spring_left.jpg', '../img/Summer_left.jpg', '../img/Autumn_left.jpg', '../img/Winter_left.jpg'], function () {
-        // this.loadImages(['../img/Spring_left.jpg', '../img/Spring_right.jpg', '../img/Summer_left.jpg', '../img/Summer_right.jpg', '../img/Autumn_left.jpg', '../img/Autumn_right.jpg', '../img/Winter_left.jpg', '../img/Winter_right.jpg'], function () {
+        this.loadImages(['../img/Spring_left.jpg', '../img/Spring_right.jpg', '../img/Summer_left.jpg', '../img/Summer_right.jpg', '../img/Autumn_left.jpg', '../img/Autumn_right.jpg', '../img/Winter_left.jpg', '../img/Winter_right.jpg'], function () {
+            this.param = {
+                imageLeft: {
+                    width: this.images[0].width,
+                    height: this.images[0].height,
+                },
+                imageRight: {
+                    width: this.images[1].width,
+                    height: this.images[1].height,
+                },
+                image: {
+                    width: this.images[0].width + this.images[1].width,
+                    height: this.images[0].height + this.images[1].height,
+                },
+            };
+
             // look up where the vertex data needs to go.
             const positionLocation = gl.getAttribLocation(program, "a_position");
             const texcoordLocation = gl.getAttribLocation(program, "a_uv");
@@ -98,13 +111,19 @@ class App {
             // lookup uniforms
             this.u_resolution = gl.getUniformLocation(program, "u_resolution");
             this.u_imageResolution = gl.getUniformLocation(program, "u_imageResolution");
+            this.u_imageLeftWidth = gl.getUniformLocation(program, "u_imageLeftWidth");
+            this.u_imageRightWidth = gl.getUniformLocation(program, "u_imageRightWidth");
             this.u_mousePosition = gl.getUniformLocation(program, "u_mousePosition");
 
             // lookup the sampler locations.
-            const u_image0Location = gl.getUniformLocation(program, "u_image0");
-            const u_image1Location = gl.getUniformLocation(program, "u_image1");
-            const u_image2Location = gl.getUniformLocation(program, "u_image2");
-            const u_image3Location = gl.getUniformLocation(program, "u_image3");
+            const u_image0LeftLocation = gl.getUniformLocation(program, "u_image0L");
+            const u_image0RightLocation = gl.getUniformLocation(program, "u_image0R");
+            const u_image1LeftLocation = gl.getUniformLocation(program, "u_image1L");
+            const u_image1RightLocation = gl.getUniformLocation(program, "u_image1R");
+            const u_image2LeftLocation = gl.getUniformLocation(program, "u_image2L");
+            const u_image2RightLocation = gl.getUniformLocation(program, "u_image2R");
+            const u_image3LeftLocation = gl.getUniformLocation(program, "u_image3L");
+            const u_image3RightLocation = gl.getUniformLocation(program, "u_image3R");
 
             this.resize();
 
@@ -124,41 +143,49 @@ class App {
 
             // set the resolution
             gl.uniform2f(this.u_resolution, gl.canvas.width, gl.canvas.height);
-            gl.uniform2f(this.u_imageResolution, this.images[0].width, this.images[0].height);
+            gl.uniform2f(this.u_imageResolution, this.param.image.width, this.param.image.height);
+            gl.uniform1f(this.u_imageLeftWidth, this.param.imageLeft.width);
+            gl.uniform1f(this.u_imageRightWidth, this.param.imageRight.width);
 
             // set which texture units to render with.
-            gl.uniform1i(u_image0Location, 0);  // texture unit 0
-            gl.uniform1i(u_image1Location, 1);  // texture unit 1
-            gl.uniform1i(u_image2Location, 2);  // texture unit 2
-            gl.uniform1i(u_image3Location, 3);  // texture unit 3
+            gl.uniform1i(u_image0LeftLocation,  0);  // texture unit 0 left
+            gl.uniform1i(u_image0RightLocation, 1);  // texture unit 0 right
+            gl.uniform1i(u_image1LeftLocation,  2);  // texture unit 1 left
+            gl.uniform1i(u_image1RightLocation, 3);  // texture unit 1 right
+            gl.uniform1i(u_image2LeftLocation,  4);  // texture unit 2 left
+            gl.uniform1i(u_image2RightLocation, 5);  // texture unit 2 right
+            gl.uniform1i(u_image3LeftLocation,  6);  // texture unit 3 left
+            gl.uniform1i(u_image3RightLocation, 7);  // texture unit 3 right
 
             // Set each texture unit to use a particular texture.
-            gl.activeTexture(gl.TEXTURE0);
-            gl.bindTexture(gl.TEXTURE_2D, textures[0]);
-            gl.activeTexture(gl.TEXTURE1);
-            gl.bindTexture(gl.TEXTURE_2D, textures[1]);
-            gl.activeTexture(gl.TEXTURE2);
-            gl.bindTexture(gl.TEXTURE_2D, textures[2]);
-            gl.activeTexture(gl.TEXTURE3);
-            gl.bindTexture(gl.TEXTURE_2D, textures[3]);
+            gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, textures[0]);
+            gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, textures[1]);
+            gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D, textures[2]);
+            gl.activeTexture(gl.TEXTURE3); gl.bindTexture(gl.TEXTURE_2D, textures[3]);
+            gl.activeTexture(gl.TEXTURE4); gl.bindTexture(gl.TEXTURE_2D, textures[4]);
+            gl.activeTexture(gl.TEXTURE5); gl.bindTexture(gl.TEXTURE_2D, textures[5]);
+            gl.activeTexture(gl.TEXTURE6); gl.bindTexture(gl.TEXTURE_2D, textures[6]);
+            gl.activeTexture(gl.TEXTURE7); gl.bindTexture(gl.TEXTURE_2D, textures[7]);
         }.bind(this));
 
         // set the event listener
         window.addEventListener('resize', this.resize.bind(this));
 
-        canvas.addEventListener('mousemove', function (evt) {
-            gl.uniform2f(this.u_mousePosition, this.dpr * evt.clientX, this.dpr * evt.clientY);
-        }.bind(this));
-
         this.touch_move = {x: 0, y: 0};
+        canvas.addEventListener('mousemove', function (evt) {
+            this.touch_move.x = this.dpr * evt.clientX / this.canvas.width;
+            this.touch_move.y = this.dpr * evt.clientY / this.canvas.height;
+            gl.uniform2f(this.u_mousePosition, this.touch_move.x, this.touch_move.y);
+        }.bind(this));
         canvas.addEventListener('touchmove', function (evt) {
             if (this.touch_moving) {
-                const ratio = 1;//this.canvas.width / this.images[0].width;
+                const img_ratio = this.canvas.height / this.param.image.height;
+                const ratio = this.canvas.width / (this.param.image.width*img_ratio - this.canvas.width);
 
-                this.touch_move.x -= ratio * this.dpr * (evt.changedTouches[0].clientX - this.touch_curr.clientX);
-                this.touch_move.y -= this.dpr * (evt.changedTouches[0].clientY - this.touch_curr.clientY);
-                this.touch_move.x = Math.min(Math.max(this.touch_move.x, 1), canvas.width-1);
-                this.touch_move.y = Math.min(Math.max(this.touch_move.y, 1), canvas.height-1);
+                this.touch_move.x -= ratio * this.dpr * (evt.changedTouches[0].clientX - this.touch_curr.clientX) / this.canvas.width;
+                this.touch_move.y -= this.dpr * (evt.changedTouches[0].clientY - this.touch_curr.clientY) / this.canvas.height;
+                this.touch_move.x = Math.min(Math.max(this.touch_move.x, 0), 1);
+                this.touch_move.y = Math.min(Math.max(this.touch_move.y, 0), 1);
 
                 gl.uniform2f(this.u_mousePosition, this.touch_move.x, this.touch_move.y);
             }
@@ -236,6 +263,10 @@ class App {
         // 브라우저가 캔버스를 표시하고 있는 크기를 CSS 픽셀 단위로 얻어옵니다.
         const displayWidth = Math.round(this.canvas.clientWidth * this.dpr);
         const displayHeight = Math.round(this.canvas.clientHeight * this.dpr);
+
+        this.touch_move.x *= displayWidth / this.canvas.width;
+        this.touch_move.y *= displayHeight / this.canvas.height;
+        this.gl.uniform2f(this.u_mousePosition, this.touch_move.x, this.touch_move.y);
 
         // 캔버스를 동일한 크기가 되도록 합니다.
         this.canvas.width = displayWidth;
