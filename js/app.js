@@ -53,7 +53,7 @@ class App {
                 },
                 image: {
                     width: this.images[0].width + this.images[1].width,
-                    height: this.images[0].height + this.images[1].height,
+                    height: this.images[0].height,
                 },
             };
 
@@ -111,18 +111,16 @@ class App {
             // lookup uniforms
             this.u_resolution = gl.getUniformLocation(program, "u_resolution");
             this.u_imageResolution = gl.getUniformLocation(program, "u_imageResolution");
-            this.u_imageLeftWidth = gl.getUniformLocation(program, "u_imageLeftWidth");
-            this.u_imageRightWidth = gl.getUniformLocation(program, "u_imageRightWidth");
             this.u_mousePosition = gl.getUniformLocation(program, "u_mousePosition");
 
             // lookup the sampler locations.
-            const u_image0LeftLocation = gl.getUniformLocation(program, "u_image0L");
+            const u_image0LeftLocation  = gl.getUniformLocation(program, "u_image0L");
             const u_image0RightLocation = gl.getUniformLocation(program, "u_image0R");
-            const u_image1LeftLocation = gl.getUniformLocation(program, "u_image1L");
+            const u_image1LeftLocation  = gl.getUniformLocation(program, "u_image1L");
             const u_image1RightLocation = gl.getUniformLocation(program, "u_image1R");
-            const u_image2LeftLocation = gl.getUniformLocation(program, "u_image2L");
+            const u_image2LeftLocation  = gl.getUniformLocation(program, "u_image2L");
             const u_image2RightLocation = gl.getUniformLocation(program, "u_image2R");
-            const u_image3LeftLocation = gl.getUniformLocation(program, "u_image3L");
+            const u_image3LeftLocation  = gl.getUniformLocation(program, "u_image3L");
             const u_image3RightLocation = gl.getUniformLocation(program, "u_image3R");
 
             this.resize();
@@ -143,9 +141,7 @@ class App {
 
             // set the resolution
             gl.uniform2f(this.u_resolution, gl.canvas.width, gl.canvas.height);
-            gl.uniform2f(this.u_imageResolution, this.param.image.width, this.param.image.height);
-            gl.uniform1f(this.u_imageLeftWidth, this.param.imageLeft.width);
-            gl.uniform1f(this.u_imageRightWidth, this.param.imageRight.width);
+            gl.uniform2f(this.u_imageResolution, this.param.imageLeft.width, this.param.imageLeft.height);
 
             // set which texture units to render with.
             gl.uniform1i(u_image0LeftLocation,  0);  // texture unit 0 left
@@ -181,7 +177,8 @@ class App {
             this.touch_vel = 0;
             clearInterval(this.touch_damping);
             this.touch_damping = null;
-        });
+            evt.preventDefault();
+        }.bind(this));
         canvas.addEventListener('touchmove', function (evt) {
             if (this.touch_moving) {
                 const img_ratio = this.canvas.height / this.param.image.height;
@@ -205,13 +202,9 @@ class App {
 
             if (this.touch_damping == null) {
                 this.touch_damping = setInterval(function(){
-                    let sign = Math.sign(this.touch_vel);
-                    if (sign > 0)
-                        this.touch_vel -= 0.5 /this.canvas.width;
-                    else
-                        this.touch_vel += 0.5 /this.canvas.width;
+                    this.touch_vel /= 1.05;
 
-                    if (sign * Math.sign(this.touch_vel) < 0) {
+                    if (Math.abs(this.touch_vel) < 0.0001) {
                         clearInterval(this.touch_damping);
                         this.touch_damping = null;
                     }else {

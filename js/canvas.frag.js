@@ -4,8 +4,6 @@ precision mediump float;
 // our textures
 uniform vec2 u_resolution;
 uniform vec2 u_imageResolution;
-uniform float u_imageLeftWidth;
-uniform float u_imageRightWidth;
 uniform vec2 u_mousePosition;
 
 uniform sampler2D u_image0L;
@@ -21,34 +19,55 @@ uniform sampler2D u_image3R;
 varying vec2 v_uv;
 
 void main() {
-    float uvRatio = u_imageResolution.y / u_imageResolution.x;
-    float xyRatio = u_resolution.y / u_resolution.x;
-    float weight = u_mousePosition.y * 4.;
-    float transl = u_mousePosition.x;
+    float uvRatio = u_imageResolution.x / u_imageResolution.y;
+    float xyRatio = u_resolution.x / u_resolution.y;
+    float scale = xyRatio / uvRatio;
 
-    transl = clamp(transl, 0., 1.);
+    float w = u_mousePosition.y * 4.; // 0 => 4
+    float t = u_mousePosition.x; // 0 => 1
+    t = clamp(t, 0., 1.);
 
     vec4 color0, color1;
-    if (weight >= 3.0) {
-        color0 = texture2D(u_image3L, v_uv * vec2(uvRatio/xyRatio, 1.0) + vec2((1.0-uvRatio/xyRatio)*transl, 0.));
-        color1 = texture2D(u_image0L, v_uv * vec2(uvRatio/xyRatio, 1.0) + vec2((1.0-uvRatio/xyRatio)*transl, 0.));
-        if (weight >= 4.0) weight = 4.0;
-    }else if (weight >= 2.0) {
-        color0 = texture2D(u_image2L, v_uv * vec2(uvRatio/xyRatio, 1.0) + vec2((1.0-uvRatio/xyRatio)*transl, 0.));
-        color1 = texture2D(u_image3L, v_uv * vec2(uvRatio/xyRatio, 1.0) + vec2((1.0-uvRatio/xyRatio)*transl, 0.));
-    }else if (weight >= 1.0) {
-        color0 = texture2D(u_image1L, v_uv * vec2(uvRatio/xyRatio, 1.0) + vec2((1.0-uvRatio/xyRatio)*transl, 0.));
-        color1 = texture2D(u_image2L, v_uv * vec2(uvRatio/xyRatio, 1.0) + vec2((1.0-uvRatio/xyRatio)*transl, 0.));
+    vec2 uv = vec2(v_uv.x * scale + (2.0 - scale) * t, v_uv.y);
+    if (uv.x >= 1.) {
+        uv.x -= 1.;
+        if (w >= 3.0) {
+            color0 = texture2D(u_image3R, uv);
+            color1 = texture2D(u_image0R, uv);
+            if (w >= 4.0) w = 4.0;
+        }else if (w >= 2.0) {
+            color0 = texture2D(u_image2R, uv);
+            color1 = texture2D(u_image3R, uv);
+        }else if (w >= 1.0) {
+            color0 = texture2D(u_image1R, uv);
+            color1 = texture2D(u_image2R, uv);
+        }else {
+            color0 = texture2D(u_image0R, uv);
+            color1 = texture2D(u_image1R, uv);
+            if (w < 0.0) w = 0.0;
+        }
     }else {
-        color0 = texture2D(u_image0L, v_uv * vec2(uvRatio/xyRatio, 1.0) + vec2((1.0-uvRatio/xyRatio)*transl, 0.));
-        color1 = texture2D(u_image1L, v_uv * vec2(uvRatio/xyRatio, 1.0) + vec2((1.0-uvRatio/xyRatio)*transl, 0.));
-        if (weight < 0.0) weight = 0.0;
+        if (w >= 3.0) {
+            color0 = texture2D(u_image3L, uv);
+            color1 = texture2D(u_image0L, uv);
+            if (w >= 4.0) w = 4.0;
+        }else if (w >= 2.0) {
+            color0 = texture2D(u_image2L, uv);
+            color1 = texture2D(u_image3L, uv);
+        }else if (w >= 1.0) {
+            color0 = texture2D(u_image1L, uv);
+            color1 = texture2D(u_image2L, uv);
+        }else {
+            color0 = texture2D(u_image0L, uv);
+            color1 = texture2D(u_image1L, uv);
+            if (w < 0.0) w = 0.0;
+        }
     }
-    
-    if (weight == 4.0)
+
+    if (w == 4.0)
         gl_FragColor = mix(color0, color1, 1.0);
     else
-        gl_FragColor = mix(color0, color1, fract(weight));
+        gl_FragColor = mix(color0, color1, fract(w));
 }
 `
 export default fragment
