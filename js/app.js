@@ -175,31 +175,29 @@ class App {
         }.bind(this));
         canvas.addEventListener('touchstart', function (evt) {
             this.touch_vel = 0;
+            this.touch_curr = evt.changedTouches[0];
+
             clearInterval(this.touch_damping);
             this.touch_damping = null;
+            
             evt.preventDefault();
         }.bind(this));
         canvas.addEventListener('touchmove', function (evt) {
-            if (this.touch_moving) {
-                const img_ratio = this.canvas.height / this.param.image.height;
-                const ratio = this.canvas.width / (this.param.image.width*img_ratio - this.canvas.width);
+            const img_ratio = this.canvas.height / this.param.image.height;
+            const ratio = this.canvas.width / (this.param.image.width*img_ratio - this.canvas.width);
 
-                this.touch_vel = ratio * this.dpr * (evt.changedTouches[0].clientX - this.touch_curr.clientX) / this.canvas.width;
-                
-                this.touch_move.x -= this.touch_vel;
-                this.touch_move.y -= this.dpr * (evt.changedTouches[0].clientY - this.touch_curr.clientY) / this.canvas.height;
-                this.touch_move.x = Math.min(Math.max(this.touch_move.x, 0), 1);
-                this.touch_move.y = Math.min(Math.max(this.touch_move.y, 0), 1);
+            this.touch_vel = ratio * this.dpr * (evt.changedTouches[0].clientX - this.touch_curr.clientX) / this.canvas.width;
 
-                gl.uniform2f(this.u_mousePosition, this.touch_move.x, this.touch_move.y);
-            }
+            this.touch_move.x -= this.touch_vel;
+            this.touch_move.y -= this.dpr * (evt.changedTouches[0].clientY - this.touch_curr.clientY) / this.canvas.height;
+            this.touch_move.x = Math.min(Math.max(this.touch_move.x, 0), 1);
+            this.touch_move.y = this.touch_move.y - Math.floor(this.touch_move.y);
             this.touch_curr = evt.changedTouches[0];
-            this.touch_moving = true;
+            gl.uniform2f(this.u_mousePosition, this.touch_move.x, this.touch_move.y);
+
             evt.preventDefault();
         }.bind(this));
         canvas.addEventListener('touchend', function (evt) {
-            this.touch_moving = false;
-
             if (this.touch_damping == null) {
                 this.touch_damping = setInterval(function(){
                     this.touch_vel /= 1.05;
