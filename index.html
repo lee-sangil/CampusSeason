@@ -26,7 +26,15 @@
 </head>
 <body>
     <div id="preloader" draggable="false">
-        <span id="loading">Loading...    </span>
+        <div id="loading">
+            <span id="loading-text">Loading</span>
+            <span id="loading-dots">
+                <span>.</span>
+                <span>.</span>
+                <span>.</span>
+            </span>
+            <span id="loading-percent"></span>
+        </div>
     </div>
     <canvas id="webgl-container" draggable="false"></canvas>
     <div id="copyright">

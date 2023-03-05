@@ -41,13 +41,44 @@ body {
     transition: opacity 2s ease;
 }
 
-#loading {
-    position: inherit;
+@mixin loading-fontstyle {
     color: white;
     font-family: 'Lato', sans-serif;
     font-weight: 400;
     font-size: #{"max(1.5vh, 8px)"};
+}
+#loading {
+    position: inherit;
     top: 50%;
     width: 100%;
     text-align: center;
+
+    &-text, &-percent {
+        @include loading-fontstyle;
+    }
+
+    &-dots {
+        @include loading-fontstyle;
+        
+        & span {
+            animation: preloader-blink 1s ease-in-out infinite;
+            @for $i from 1 through 3 {
+                &:nth-child(#{$i}) {
+                    animation-delay: #{($i - 3) * .1}s; // -0.2, -0.1, -0.0
+                }
+            }
+        }
+    }
+}
+
+@keyframes preloader-blink{
+    0%{
+        opacity: 0;
+    }
+    50%{
+        opacity: 1;
+    }
+    100%{
+        opacity: 0;
+    }
 }

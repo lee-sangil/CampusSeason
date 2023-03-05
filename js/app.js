@@ -8,11 +8,11 @@ let assetLoaded = {
     totNum: 8,
 };
 
-const loading = document.querySelector('#loading');
+const loading_percent = document.querySelector('#loading-percent');
 const assetLoadingInterval = setInterval(()=>{
     if (assetLoaded.percentage < Math.floor(assetLoaded.num/assetLoaded.totNum*100)) {
         ++assetLoaded.percentage;
-        loading.textContent = 'Loading... ' + assetLoaded.percentage + '%';
+        loading_percent.textContent = assetLoaded.percentage + '%';
     }else if (assetLoaded.percentage === 100) {
         document.getElementById('preloader').style.opacity = 0;
         clearInterval(assetLoadingInterval);
