@@ -41,7 +41,7 @@ class App {
         // setup GLSL program
         gl.useProgram(program);
 
-        this.loadImages(['../img/Spring_left.jpg', '../img/Spring_right.jpg', '../img/Summer_left.jpg', '../img/Summer_right.jpg', '../img/Autumn_left.jpg', '../img/Autumn_right.jpg', '../img/Winter_left.jpg', '../img/Winter_right.jpg'], function () {
+        this.loadImages(['img/Spring_left.jpg', 'img/Spring_right.jpg', 'img/Summer_left.jpg', 'img/Summer_right.jpg', 'img/Autumn_left.jpg', 'img/Autumn_right.jpg', 'img/Winter_left.jpg', 'img/Winter_right.jpg'], function () {
             this.param = {
                 imageLeft: {
                     width: this.images[0].width,
@@ -199,14 +199,16 @@ class App {
         }.bind(this));
         canvas.addEventListener('touchend', function (evt) {
             if (this.touch_damping == null) {
+                this.touch_damping_pos = this.touch_move.x;
+                this.touch_damping_time = Date.now();
                 this.touch_damping = setInterval(function(){
-                    this.touch_vel /= 1.05;
-
-                    if (Math.abs(this.touch_vel) < 0.0001) {
+                    const time = (Date.now() - this.touch_damping_time) / 1000;
+                    const T = 1;
+                    if (time >= T) {
                         clearInterval(this.touch_damping);
                         this.touch_damping = null;
                     }else {
-                        this.touch_move.x -= this.touch_vel;
+                        this.touch_move.x = this.touch_damping_pos - this.touch_vel * 15 * (1-Math.exp(-3*time/T));
                         if (this.touch_move.x >= 1 || this.touch_move.x <= 0) {
                             this.touch_move.x = Math.min(Math.max(this.touch_move.x, 0), 1);
                             clearInterval(this.touch_damping);
