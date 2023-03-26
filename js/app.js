@@ -176,9 +176,7 @@ class App {
         canvas.addEventListener('touchstart', function (evt) {
             this.touch_vel = 0;
             this.touch_curr = evt.changedTouches[0];
-
-            clearInterval(this.touch_damping);
-            this.touch_damping = null;
+            this.touch_damping = false;
             
             evt.preventDefault();
         }.bind(this));
@@ -198,25 +196,10 @@ class App {
             evt.preventDefault();
         }.bind(this));
         canvas.addEventListener('touchend', function (evt) {
-            if (this.touch_damping == null) {
+            if (this.touch_damping == false) {
                 this.touch_damping_pos = this.touch_move.x;
                 this.touch_damping_time = Date.now();
-                this.touch_damping = setInterval(function(){
-                    const time = (Date.now() - this.touch_damping_time) / 1000;
-                    const T = 1;
-                    if (time >= T) {
-                        clearInterval(this.touch_damping);
-                        this.touch_damping = null;
-                    }else {
-                        this.touch_move.x = this.touch_damping_pos - this.touch_vel * 15 * (1-Math.exp(-3*time/T));
-                        if (this.touch_move.x >= 1 || this.touch_move.x <= 0) {
-                            this.touch_move.x = Math.min(Math.max(this.touch_move.x, 0), 1);
-                            clearInterval(this.touch_damping);
-                            this.touch_damping = null;
-                        }
-                        gl.uniform2f(this.u_mousePosition, this.touch_move.x, this.touch_move.y);
-                    }
-                }.bind(this), 15);
+                this.touch_damping = true;
             }
 
             evt.preventDefault();
@@ -317,6 +300,33 @@ class App {
     render() {
         // draw
         this.gl.drawArrays(this.gl.TRIANGLES, 0, 6);
+
+        if (this.touch_damping) {
+            this.touch_vel *= 0.95;
+            if (Math.abs(this.touch_vel) < 0.0001) {
+                this.touch_damping = false;
+            }else {
+                this.touch_move.x -= this.touch_vel;
+                if (this.touch_move.x >= 1 || this.touch_move.x <= 0) {
+                    this.touch_move.x = Math.min(Math.max(this.touch_move.x, 0), 1);
+                    this.touch_damping = false;
+                }
+            }
+            this.gl.uniform2f(this.u_mousePosition, this.touch_move.x, this.touch_move.y);
+
+            // const time = (Date.now() - this.touch_damping_time) / 1000;
+            // const T = 2;
+            // if (time >= T) {
+            //     this.touch_damping = false;
+            // }else {
+            //     this.touch_move.x = this.touch_damping_pos - this.touch_vel * 15 * (1-Math.exp(-5*time/T));
+            //     if (this.touch_move.x >= 1 || this.touch_move.x <= 0) {
+            //         this.touch_move.x = Math.min(Math.max(this.touch_move.x, 0), 1);
+            //         this.touch_damping = false;
+            //     }
+            // }
+            // this.gl.uniform2f(this.u_mousePosition, this.touch_move.x, this.touch_move.y);
+        };
 
         requestAnimationFrame(this.render.bind(this));
     }
