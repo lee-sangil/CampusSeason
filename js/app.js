@@ -1,33 +1,27 @@
 import fragment from './canvas.frag.js'
 import vertex from './canvas.vert.js'
 
-let assetLoaded = {
-    percentage: 0,
-    num: 0,
-    size: 0,
-    totNum: 8,
-};
-
-const loading_percent = document.querySelector('#loading-percent');
-const assetLoadingInterval = setInterval(()=>{
-    if (assetLoaded.percentage < Math.floor(assetLoaded.num/assetLoaded.totNum*100)) {
-        ++assetLoaded.percentage;
-        loading_percent.textContent = assetLoaded.percentage + '%';
-    }else if (assetLoaded.percentage === 100) {
-        document.getElementById('preloader').style.opacity = 0;
-        clearInterval(assetLoadingInterval);
-    }
-}, 15);
-
-class App {
-    constructor() {
+export class App {
+    constructor(app_container, base_dir) {
         // Get A WebGL context
-        const canvas = document.getElementById('webgl-container');
-        const gl = canvas.getContext("webgl");
+        const div = document.createElement("div");
+        div.style.width = '100%';
+        div.style.height = '100%';
+
+        const canvas = document.createElement("canvas");
+        canvas.draggable = false;
+        this.canvas = canvas;
+        this.canvas.style.width = '100%'
+        this.canvas.style.height = '100%'
+        
+        div.appendChild(canvas);
+        app_container.appendChild(div);
+        this.body = div;
+
+        const gl = this.canvas.getContext("webgl");
         if (!gl) {
             return;
         }
-        this.canvas = canvas;
         this.gl = gl;
         this.dpr = window.devicePixelRatio;
 
@@ -41,7 +35,14 @@ class App {
         // setup GLSL program
         gl.useProgram(program);
 
-        this.loadImages(['img/Spring_left.jpg', 'img/Spring_right.jpg', 'img/Summer_left.jpg', 'img/Summer_right.jpg', 'img/Autumn_left.jpg', 'img/Autumn_right.jpg', 'img/Winter_left.jpg', 'img/Winter_right.jpg'], function () {
+        this.loadImages([base_dir+'/img/Spring_left.jpg', 
+                         base_dir+'/img/Spring_right.jpg', 
+                         base_dir+'/img/Summer_left.jpg', 
+                         base_dir+'/img/Summer_right.jpg', 
+                         base_dir+'/img/Autumn_left.jpg', 
+                         base_dir+'/img/Autumn_right.jpg', 
+                         base_dir+'/img/Winter_left.jpg', 
+                         base_dir+'/img/Winter_right.jpg'], function () {
             this.param = {
                 imageLeft: {
                     width: this.images[0].width,
@@ -168,19 +169,19 @@ class App {
         window.addEventListener('resize', this.resize.bind(this));
 
         this.touch_move = {x: 0, y: 0};
-        canvas.addEventListener('mousemove', function (evt) {
+        this.body.addEventListener('mousemove', function (evt) {
             this.touch_move.x = this.dpr * evt.clientX / this.canvas.width;
             this.touch_move.y = this.dpr * evt.clientY / this.canvas.height;
             gl.uniform2f(this.u_mousePosition, this.touch_move.x, this.touch_move.y);
         }.bind(this));
-        canvas.addEventListener('touchstart', function (evt) {
+        this.body.addEventListener('touchstart', function (evt) {
             this.touch_vel = 0;
             this.touch_curr = evt.changedTouches[0];
             this.touch_damping = false;
             
             evt.preventDefault();
         }.bind(this));
-        canvas.addEventListener('touchmove', function (evt) {
+        this.body.addEventListener('touchmove', function (evt) {
             const img_ratio = this.canvas.height / this.param.image.height;
             const ratio = this.canvas.width / (this.param.image.width*img_ratio - this.canvas.width);
 
@@ -195,7 +196,7 @@ class App {
 
             evt.preventDefault();
         }.bind(this));
-        canvas.addEventListener('touchend', function (evt) {
+        this.body.addEventListener('touchend', function (evt) {
             if (this.touch_damping == false) {
                 this.touch_damping_pos = this.touch_move.x;
                 this.touch_damping_time = Date.now();
@@ -205,7 +206,25 @@ class App {
             evt.preventDefault();
         }.bind(this));
         
-        window.requestAnimationFrame(this.render.bind(this));
+        this.render();
+    }
+
+    release(){
+        window.cancelAnimationFrame(this.requestID);
+        window.removeEventListener('resize', this.resize.bind(this));
+
+        this.removeElement(this.body);
+    }
+
+    removeElement(element){
+        while (element.firstChild) {
+            this.removeElement(element.firstChild);
+        }
+        element.remove();
+    }
+
+    getTotalNumAssets() {
+        return 8;
     }
 
     createShader(gl, type, source) {
@@ -252,7 +271,7 @@ class App {
         // Called each time an image finished loading.
         const onImageLoad = function () {
             --numImagesToLoad;
-            ++assetLoaded.num;
+            dispatchEvent(new CustomEvent("onloadasset", {detail: {type: 'image'}}));
 
             // If all the images are loaded call the callback.
             if (numImagesToLoad === 0) {
@@ -328,25 +347,6 @@ class App {
             // this.gl.uniform2f(this.u_mousePosition, this.touch_move.x, this.touch_move.y);
         };
 
-        requestAnimationFrame(this.render.bind(this));
-    }
-}
-
-window.onload = () => {
-    new App();
-    window.document.oncontextmenu = () => { return false }; // lock right click
-
-    if (getComputedStyle(document.documentElement).getPropertyValue('--debug-mode') != 1) {
-        window.document.onkeydown = (event) => {
-            if (event.key == 'F12') { // Prevent from <F12> key
-                return false;
-            }
-            else if (event.ctrlKey && event.shiftKey && event.key == 'i') {
-                return false;  // Prevent from ctrl+shift+i
-            }
-            else if (event.ctrlKey) {
-                return false;  // Prevent from ctrl
-            }
-        };
+        this.requestID = requestAnimationFrame(this.render.bind(this));
     }
 }
