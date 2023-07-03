@@ -1,8 +1,10 @@
+const base_dir = '/apps/panorama'
+
 import fragment from './canvas.frag.js'
 import vertex from './canvas.vert.js'
 
 export class App {
-    constructor(app_container, base_dir) {
+    constructor(app_container) {
         // Get A WebGL context
         const div = document.createElement("div");
         div.style.width = '100%';
@@ -166,7 +168,8 @@ export class App {
         }.bind(this));
 
         // set the event listener
-        window.addEventListener('resize', this.resize.bind(this));
+        this.resize = this.resize.bind(this);
+        window.addEventListener('resize', this.resize, false);
 
         this.touch_move = {x: 0, y: 0};
         this.body.addEventListener('mousemove', function (evt) {
@@ -211,7 +214,7 @@ export class App {
 
     release(){
         window.cancelAnimationFrame(this.requestID);
-        window.removeEventListener('resize', this.resize.bind(this));
+        window.removeEventListener('resize', this.resize, false);
 
         this.removeElement(this.body);
     }
