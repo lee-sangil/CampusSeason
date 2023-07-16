@@ -4,22 +4,12 @@ import fragment from './canvas.frag.js'
 import vertex from './canvas.vert.js'
 
 export class App {
+    static getTotalNumAssets = 8;
+
     constructor(app_container) {
-        // Get A WebGL context
-        const div = document.createElement("div");
-        div.style.width = '100%';
-        div.style.height = '100%';
+        this.launch(app_container);
 
-        const canvas = document.createElement("canvas");
-        canvas.draggable = false;
-        this.canvas = canvas;
-        this.canvas.style.width = '100%'
-        this.canvas.style.height = '100%'
-        
-        div.appendChild(canvas);
-        app_container.appendChild(div);
-        this.body = div;
-
+        this.canvas = document.getElementById('webgl-container');
         const gl = this.canvas.getContext("webgl");
         if (!gl) {
             return;
@@ -72,11 +62,11 @@ export class App {
             // Set a rectangle the same size as the image.
             const positions = [
                 0, 0,
-                canvas.clientWidth*this.dpr, 0,
-                0, canvas.clientHeight*this.dpr,
-                0, canvas.clientHeight*this.dpr,
-                canvas.clientWidth*this.dpr, 0,
-                canvas.clientWidth*this.dpr, canvas.clientHeight*this.dpr,
+                this.canvas.clientWidth*this.dpr, 0,
+                0, this.canvas.clientHeight*this.dpr,
+                0, this.canvas.clientHeight*this.dpr,
+                this.canvas.clientWidth*this.dpr, 0,
+                this.canvas.clientWidth*this.dpr, this.canvas.clientHeight*this.dpr,
             ];
             gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
 
@@ -212,11 +202,32 @@ export class App {
         this.render();
     }
 
+    launch(app_container){
+        const xhr = new XMLHttpRequest();
+
+        xhr.open('GET', `${base_dir}/static/index.html`, false);
+        xhr.send(null);
+
+        this.body = document.createElement('div');
+        this.body.style.width = '100%';
+        this.body.style.height = '100%';
+        this.body.innerHTML = xhr.responseText;
+        app_container.appendChild(this.body);
+
+        xhr.open('GET', `${base_dir}/static/style.css`, false);
+        xhr.send(null);
+
+        this.style = document.createElement('style');
+        this.style.innerHTML = xhr.responseText;
+        document.head.appendChild(this.style);
+    }
+
     release(){
         window.cancelAnimationFrame(this.requestID);
         window.removeEventListener('resize', this.resize, false);
 
         this.removeElement(this.body);
+        document.head.removeChild(this.style);
     }
 
     removeElement(element){
@@ -224,10 +235,6 @@ export class App {
             this.removeElement(element.firstChild);
         }
         element.remove();
-    }
-
-    getTotalNumAssets() {
-        return 8;
     }
 
     createShader(gl, type, source) {
