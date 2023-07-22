@@ -1,13 +1,13 @@
 const base_dir = '/apps/panorama'
 
+import { AppTemplate } from "/apps/addon/template/app_template.js";
 import fragment from './canvas.frag.js'
 import vertex from './canvas.vert.js'
 
-export class App {
-    static getTotalNumAssets = 8;
-
+export class App extends AppTemplate {
     constructor(app_container) {
-        this.launch(app_container);
+        super();
+        this.launch(app_container, `${base_dir}/static/index.html`, `${base_dir}/static/style.css`);
 
         this.canvas = document.getElementById('webgl-container');
         const gl = this.canvas.getContext("webgl");
@@ -160,6 +160,8 @@ export class App {
         // set the event listener
         this.resize = this.resize.bind(this);
         window.addEventListener('resize', this.resize, false);
+        this.window_event_listener = [];
+        this.window_event_listener.push({'key': 'resize', 'callback': this.resize});
 
         this.touch_move = {x: 0, y: 0};
         this.body.addEventListener('mousemove', function (evt) {
@@ -202,39 +204,8 @@ export class App {
         this.render();
     }
 
-    launch(app_container){
-        const xhr = new XMLHttpRequest();
-
-        xhr.open('GET', `${base_dir}/static/index.html`, false);
-        xhr.send(null);
-
-        this.body = document.createElement('div');
-        this.body.style.width = '100%';
-        this.body.style.height = '100%';
-        this.body.innerHTML = xhr.responseText;
-        app_container.appendChild(this.body);
-
-        xhr.open('GET', `${base_dir}/static/style.css`, false);
-        xhr.send(null);
-
-        this.style = document.createElement('style');
-        this.style.innerHTML = xhr.responseText;
-        document.head.appendChild(this.style);
-    }
-
-    release(){
-        window.cancelAnimationFrame(this.requestID);
-        window.removeEventListener('resize', this.resize, false);
-
-        this.removeElement(this.body);
-        document.head.removeChild(this.style);
-    }
-
-    removeElement(element){
-        while (element.firstChild) {
-            this.removeElement(element.firstChild);
-        }
-        element.remove();
+    getTotalNumAssets() {
+        return 8;
     }
 
     createShader(gl, type, source) {
