@@ -8,7 +8,9 @@ export class App extends AppTemplate {
     constructor(app_container) {
         super();
         this.launch(app_container, `${base_dir}/static/index.html`, `${base_dir}/static/style.css`);
+    }
 
+    run() {
         this.canvas = document.getElementById('webgl-container');
         const gl = this.canvas.getContext("webgl");
         if (!gl) {
